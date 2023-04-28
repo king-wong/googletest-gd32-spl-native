@@ -70,10 +70,29 @@ void gd32Start()
     startup_delay(2000);
 }
 
-int putchar(int c)
+int mkdir(const char* path) {
+    return 0; // not implemented
+}
+
+#include <errno.h>
+#include <sys/unistd.h> // STDOUT_FILENO, STDERR_FILENO
+int _write(int file, char *data, int len)
 {
-    usart_data_transmit(USART, c);
-    while(usart_flag_get(USART, USART_FLAG_TBE) != SET) {}
+    if ((file != STDOUT_FILENO) && (file != STDERR_FILENO))
+    {
+        errno = EBADF;
+        return -1;
+    }
+
+    for (int i = 0; i < len; i++)
+    {
+        usart_data_transmit(USART, (uint8_t)data[i]);
+        while (RESET == usart_flag_get(USART, USART_FLAG_TBE))
+            ;
+    }
+
+    // return # of bytes written - as best we can tell
+    return len;
 }
 
 void gd32OutputFlush() {
